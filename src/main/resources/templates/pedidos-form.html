@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Novo Pedido</title>
+</head>
+<body>
+
+<div th:fragment="content">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/pedidos" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="fw-bold mb-0">Novo Pedido</h2>
+    </div>
+
+    <div class="alert alert-danger d-none" id="erroPedido" role="alert"></div>
+
+    <div class="card shadow-sm" style="max-width: 720px;">
+        <div class="card-body p-4">
+
+            <div class="mb-3">
+                <label for="cliente" class="form-label fw-medium">
+                    <i class="bi bi-person me-1"></i>Cliente
+                </label>
+                <select id="cliente" class="form-select" required>
+                    <option value="" selected disabled>Selecione o cliente</option>
+                    <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.nome}"></option>
+                </select>
+            </div>
+
+            <label class="form-label fw-medium"><i class="bi bi-basket me-1"></i>Itens</label>
+            <div id="itens"></div>
+
+            <button type="button" class="btn btn-sm btn-outline-secondary mb-3" id="adicionarItem">
+                <i class="bi bi-plus-lg"></i> Adicionar item
+            </button>
+
+            <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                <div>
+                    <span class="text-muted">Total estimado:</span>
+                    <strong id="totalEstimado">R$ 0,00</strong>
+                    <div class="small text-muted">O valor final é calculado pelo servidor.</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" id="registrar">
+                        <i class="bi bi-check-lg me-1"></i>Registrar pedido
+                    </button>
+                    <a href="/pedidos" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produtos disponiveis, usados para montar as linhas de item -->
+    <script th:inline="javascript">
+        const PRODUTOS = /*[[${produtos}]]*/ [];
+        const listaItens = document.getElementById('itens');
+        const erroBox = document.getElementById('erroPedido');
+
+        function adicionarLinha() {
+            const linha = document.createElement('div');
+            linha.className = 'd-flex gap-2 mb-2 item-linha';
+
+            const select = document.createElement('select');
+            select.className = 'form-select';
+            select.innerHTML = '<option value="" selected disabled>Produto</option>';
+            PRODUTOS.forEach(p => {
+                const op = document.createElement('option');
+                op.value = p.id;
+                op.textContent = `${p.nome} - R$ ${Number(p.preco).toFixed(2).replace('.', ',')}`;
+                select.appendChild(op);
+            });
+
+            const qtd = document.createElement('input');
+            qtd.type = 'number';
+            qtd.min = 1;
+            qtd.max = 99;
+            qtd.value = 1;
+            qtd.className = 'form-control';
+            qtd.style.maxWidth = '100px';
+
+            const remover = document.createElement('button');
+            remover.type = 'button';
+            remover.className = 'btn btn-outline-danger';
+            remover.innerHTML = '<i class="bi bi-x-lg"></i>';
+            remover.addEventListener('click', () => { linha.remove(); atualizarTotal(); });
+
+            select.addEventListener('change', atualizarTotal);
+            qtd.addEventListener('input', atualizarTotal);
+            linha.append(select, qtd, remover);
+            listaItens.appendChild(linha);
+        }
+
+        function lerItens() {
+            return Array.from(listaItens.querySelectorAll('.item-linha')).map(l => ({
+                produtoId: l.querySelector('select').value,
+                quantidade: parseInt(l.querySelector('input').value, 10)
+            })).filter(i => i.produtoId);
+        }
+
+        function atualizarTotal() {
+            const total = lerItens().reduce((soma, i) => {
+                const produto = PRODUTOS.find(p => p.id === i.produtoId);
+                return soma + (produto ? Number(produto.preco) * (i.quantidade || 0) : 0);
+            }, 0);
+            document.getElementById('totalEstimado').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+        }
+
+        document.getElementById('adicionarItem').addEventListener('click', adicionarLinha);
+
+        document.getElementById('registrar').addEventListener('click', async () => {
+            erroBox.classList.add('d-none');
+            const resultado = await chamarApi('/api/pedidos', 'POST', {
+                clienteId: document.getElementById('cliente').value,
+                itens: lerItens()
+            });
+            if (resultado.ok) {
+                window.location.href = '/pedidos';
+            } else {
+                erroBox.textContent = (resultado.dados && resultado.dados.mensagem) || 'Não foi possível registrar o pedido.';
+                erroBox.classList.remove('d-none');
+            }
+        });
+
+        adicionarLinha();
+    </script>
+
+</div>
+
+</body>
+</html>

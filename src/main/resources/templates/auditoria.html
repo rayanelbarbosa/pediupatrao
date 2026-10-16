@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Auditoria</title>
+</head>
+<body>
+
+<div th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-journal-text me-2 text-primary"></i>Auditoria
+        </h2>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" th:action="@{/auditoria}" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <select name="entidade" class="form-select">
+                <option value="">Todas as entidades</option>
+                <option value="PEDIDO" th:selected="${filtroEntidade == 'PEDIDO'}">Pedido</option>
+                <option value="CLIENTE" th:selected="${filtroEntidade == 'CLIENTE'}">Cliente</option>
+                <option value="USUARIO" th:selected="${filtroEntidade == 'USUARIO'}">Usuário</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="entidadeId" class="form-control" placeholder="ID da entidade" th:value="${filtroEntidadeId}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="usuario" class="form-control" placeholder="Usuário" th:value="${filtroUsuario}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Filtrar</button>
+            <a th:href="@{/auditoria}" class="btn btn-outline-secondary">Limpar</a>
+        </div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Data e hora</th>
+                        <th>Usuário</th>
+                        <th>Operação</th>
+                        <th>Entidade</th>
+                        <th>Alterações</th>
+                        <th>Justificativa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(registros)}">
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Nenhum registro encontrado.
+                        </td>
+                    </tr>
+                    <tr th:each="r : ${registros}">
+                        <td class="ps-4 small text-nowrap" th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                        <td>
+                            <span th:text="${r.usuario}"></span>
+                            <div class="small text-muted" th:text="${r.perfil}"></div>
+                        </td>
+                        <td th:text="${r.operacao.descricao}"></td>
+                        <td>
+                            <span th:text="${r.entidade}"></span>
+                            <div class="small text-muted" th:text="${r.entidadeId}"></div>
+                        </td>
+                        <td class="small">
+                            <div th:each="a : ${r.alteracoes}">
+                                <strong th:text="${a.campo}"></strong>:
+                                <span class="text-muted" th:text="${a.valorAnterior ?: '—'}"></span>
+                                <i class="bi bi-arrow-right"></i>
+                                <span th:text="${a.valorNovo ?: '—'}"></span>
+                            </div>
+                        </td>
+                        <td class="small" th:text="${r.justificativa}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">
+            Exibindo os registros mais recentes (até 200).
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

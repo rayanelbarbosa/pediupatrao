@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Lista de Pedidos</title>
+</head>
+<body>
+
+<div th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-bag me-2 text-primary"></i>Pedidos
+        </h2>
+        <a href="/pedidos/novo" class="btn btn-primary" sec:authorize="hasAnyRole('GERENTE','ATENDENTE')">
+            <i class="bi bi-plus-lg me-1"></i> Novo Pedido
+        </a>
+    </div>
+
+    <!-- Mensagens de feedback -->
+    <div class="alert alert-success alert-dismissible fade show" th:if="${sucesso}" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${sucesso}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade show" th:if="${erro}" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${erro}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Pedido</th>
+                        <th>Cliente</th>
+                        <th>Itens</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Entrada</th>
+                        <th>Saída</th>
+                        <th class="text-end pe-4" sec:authorize="hasRole('GERENTE')">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Lista vazia -->
+                    <tr th:if="${#lists.isEmpty(pedidos)}">
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Nenhum pedido encontrado.
+                        </td>
+                    </tr>
+                    <!-- Linhas -->
+                    <tr th:each="pedido : ${pedidos}">
+                        <td class="ps-4 text-muted small" th:text="${#strings.length(pedido.id) > 6 ? #strings.substring(pedido.id, #strings.length(pedido.id) - 6) : pedido.id}"
+                            th:title="${pedido.id}"></td>
+                        <td th:text="${nomesClientes.get(pedido.clienteId) ?: pedido.clienteId}"></td>
+                        <td>
+                            <div class="small" th:each="item : ${pedido.itens}"
+                                 th:text="${item.quantidade + 'x ' + item.nomeProduto}"></div>
+                        </td>
+                        <td>
+                            <span th:if="${pedido.valorTotal != null}"
+                                  th:text="${'R$ ' + #numbers.formatDecimal(pedido.valorTotal, 1, 'POINT', 2, 'COMMA')}"></span>
+                            <div class="small text-success" th:if="${pedido.descontoPercentual != null and pedido.descontoPercentual.signum() > 0}"
+                                 th:text="${'desconto de ' + pedido.descontoPercentual.stripTrailingZeros().toPlainString() + '%'}"></div>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${pedido.status == 'FINALIZADO'} ? 'bg-success' :
+                                                  (${pedido.status == 'CANCELADO'} ? 'bg-danger' :
+                                                  (${pedido.status == 'EM_PREPARACAO'} ? 'bg-warning text-dark' :
+                                                  (${pedido.status == 'PRONTO'} ? 'bg-info text-dark' : 'bg-secondary')))"
+                                  th:text="${pedido.status}">
+                            </span>
+                            <div class="small text-danger mt-1" th:if="${pedido.status == 'CANCELADO'}"
+                                 th:text="${pedido.justificativaCancelamento}"></div>
+                        </td>
+                        <td class="small">
+                            <span th:if="${pedido.dataEntrada != null}" th:text="${#temporals.format(pedido.dataEntrada, 'dd/MM/yyyy HH:mm')}"></span>
+                            <div class="text-muted" th:text="${pedido.responsavelRegistro}"></div>
+                        </td>
+                        <td class="small">
+                            <span th:if="${pedido.dataSaida != null}" th:text="${#temporals.format(pedido.dataSaida, 'dd/MM/yyyy HH:mm')}"></span>
+                            <div class="text-muted" th:text="${pedido.responsavelSaida}"></div>
+                        </td>
+                        <td class="text-end pe-4" sec:authorize="hasRole('GERENTE')">
+                            <!-- Proximos status possiveis de acordo com o fluxo -->
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                    th:if="${pedido.status == 'RECEBIDO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="status" data-destino="EM_PREPARACAO">
+                                Enviar p/ cozinha
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                    th:if="${pedido.status == 'EM_PREPARACAO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="status" data-destino="PRONTO">
+                                Marcar pronto
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                    th:if="${pedido.status == 'PRONTO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="status" data-destino="SAIU_PARA_ENTREGA">
+                                Saiu p/ entrega
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                    th:if="${pedido.status == 'PRONTO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="status" data-destino="RETIRADO">
+                                Retirado
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success me-1"
+                                    th:if="${pedido.status == 'SAIU_PARA_ENTREGA' or pedido.status == 'RETIRADO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="status" data-destino="FINALIZADO">
+                                Finalizar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                                    th:if="${pedido.status == 'RECEBIDO' or pedido.status == 'EM_PREPARACAO' or pedido.status == 'PRONTO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="desconto">
+                                Desconto
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    th:if="${pedido.status == 'RECEBIDO' or pedido.status == 'EM_PREPARACAO' or pedido.status == 'PRONTO'}"
+                                    th:attr="data-id=${pedido.id}" data-acao="cancelar">
+                                Cancelar
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small" th:if="${!#lists.isEmpty(pedidos)}">
+            Total: <strong th:text="${#lists.size(pedidos)}"></strong> pedido(s)
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('button[data-acao]').forEach(botao => {
+            botao.addEventListener('click', async () => {
+                const id = encodeURIComponent(botao.dataset.id);
+                let resultado;
+
+                if (botao.dataset.acao === 'status') {
+                    resultado = await chamarApi(`/api/pedidos/${id}/status?status=${botao.dataset.destino}`, 'PUT');
+                } else if (botao.dataset.acao === 'desconto') {
+                    const texto = prompt('Percentual de desconto (máximo 20):');
+                    if (texto === null) return;
+                    const percentual = Number(texto.replace(',', '.'));
+                    if (!texto.trim() || Number.isNaN(percentual)) {
+                        alert('Informe um número válido.');
+                        return;
+                    }
+                    resultado = await chamarApi(`/api/pedidos/${id}/desconto`, 'POST', { percentual: percentual });
+                } else {
+                    const justificativa = prompt('Justificativa do cancelamento:');
+                    if (justificativa === null) return;
+                    resultado = await chamarApi(`/api/pedidos/${id}/cancelamento`, 'POST', { justificativa: justificativa });
+                }
+
+                if (resultado.ok) {
+                    location.reload();
+                } else {
+                    alert((resultado.dados && resultado.dados.mensagem) || 'Não foi possível concluir a operação.');
+                }
+            });
+        });
+    </script>
+
+</div>
+
+</body>
+</html>
