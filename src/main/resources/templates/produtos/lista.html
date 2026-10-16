@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <head>
         <meta charset="UTF-8">
+        <meta name="_csrf" th:content="${_csrf.token}">
+        <meta name="_csrf_header" th:content="${_csrf.headerName}">
         <title>Gerenciar Produtos</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -78,18 +80,56 @@
                         <td th:text="${produto.nome}"></td>
                         <td th:text="${produto.tipo}"></td>
                         <td th:text="${#numbers.formatDecimal(produto.preco, 1, 'COMMA', 2, 'POINT')}"></td>
-                        <td th:text="${produto.ativo ? 'Sim' : 'Não'}">Sim</td>
+                        <td th:text="${produto.ativo == null or produto.ativo ? 'Sim' : 'Não'}">Sim</td>
                         <td>
                             <a th:href="@{/api/produtos/{id}(id=${produto.id})}" class="btn btn-warning btn-sm">Editar</a>
-                            <a th:href="@{/api/produtos/{id}(id=${produto.id})}" class="btn btn-danger btn-sm" 
-                               onclick="return confirm('Tem certeza que deseja excluir este produto?');">
-                                Excluir
-                            </a>
+                            <button type="button" class="btn btn-danger btn-sm btn-excluir"
+                                    th:attr="data-id=${produto.id}">Excluir</button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+        <script>
+            function cabecalhos() {
+                const h = { 'Content-Type': 'application/json' };
+                h[document.querySelector('meta[name="_csrf_header"]').content] =
+                        document.querySelector('meta[name="_csrf"]').content;
+                return h;
+            }
+
+            document.getElementById('produtoForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const resposta = await fetch('/api/produtos', {
+                    method: 'POST',
+                    headers: cabecalhos(),
+                    body: JSON.stringify({
+                        nome: document.getElementById('nome').value,
+                        tipo: document.getElementById('tipo').value,
+                        preco: parseFloat(document.getElementById('preco').value),
+                        ativo: document.getElementById('ativo').checked
+                    })
+                });
+                if (resposta.ok) {
+                    location.reload();
+                } else {
+                    alert(resposta.status === 403 ? 'Apenas o gerente pode cadastrar produtos.' : 'Não foi possível salvar o produto.');
+                }
+            });
+
+            document.querySelectorAll('.btn-excluir').forEach(botao => {
+                botao.addEventListener('click', async () => {
+                    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+                    const h = cabecalhos();
+                    const resposta = await fetch('/api/produtos/' + encodeURIComponent(botao.dataset.id), { method: 'DELETE', headers: h });
+                    if (resposta.ok) {
+                        location.reload();
+                    } else {
+                        alert(resposta.status === 403 ? 'Apenas o gerente pode excluir produtos.' : 'Não foi possível excluir o produto.');
+                    }
+                });
+            });
+        </script>
         <script th:src="@{/js/script.js}"></script>
     </body>
 </html>

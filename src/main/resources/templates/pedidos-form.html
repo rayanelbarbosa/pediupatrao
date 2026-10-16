@@ -14,6 +14,9 @@
         <h2 class="fw-bold mb-0">Novo Pedido</h2>
     </div>
 
+    <div class="alert alert-warning" th:if="${#lists.isEmpty(produtos)}" role="alert">
+        Não há produtos ativos cadastrados. Peça ao gerente para cadastrar em Configurações &gt; Produtos.
+    </div>
     <div class="alert alert-danger d-none" id="erroPedido" role="alert"></div>
 
     <div class="card shadow-sm" style="max-width: 720px;">
@@ -111,6 +114,11 @@
 
         document.getElementById('registrar').addEventListener('click', async () => {
             erroBox.classList.add('d-none');
+            if (lerItens().length === 0) {
+                erroBox.textContent = 'Escolha pelo menos um produto.';
+                erroBox.classList.remove('d-none');
+                return;
+            }
             const resultado = await chamarApi('/api/pedidos', 'POST', {
                 clienteId: document.getElementById('cliente').value,
                 itens: lerItens()
