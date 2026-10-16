@@ -136,4 +136,25 @@ class TelasTest {
                 .andExpect(content().string(containsString("href=\"/usuarios\"")))
                 .andExpect(content().string(containsString("href=\"/auditoria\"")));
     }
+
+    @Test
+    void todasAsTelasAbremSemErro() throws Exception {
+        String[] paginas = {"/", "/clientes", "/pedidos", "/produtos", "/configuracoes"};
+        for (String url : paginas) {
+            mvc.perform(get(url).with(user("g").roles("GERENTE"))).andExpect(status().isOk());
+        }
+        mvc.perform(get("/clientes/novo").with(user("t").roles("ATENDENTE"))).andExpect(status().isOk());
+        mvc.perform(get("/usuarios").with(user("a").roles("ADMIN"))).andExpect(status().isOk());
+        mvc.perform(get("/usuarios/novo").with(user("a").roles("ADMIN"))).andExpect(status().isOk());
+    }
+
+    @Test
+    void produtosSoMostraCadastroParaGerente() throws Exception {
+        mvc.perform(get("/produtos").with(user("g").roles("GERENTE")))
+                .andExpect(content().string(containsString("Novo Produto")))
+                .andExpect(content().string(containsString("Calabresa")));
+        mvc.perform(get("/produtos").with(user("t").roles("ATENDENTE")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Novo Produto"))));
+    }
 }

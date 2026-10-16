@@ -1,135 +1,124 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="_csrf" th:content="${_csrf.token}">
-        <meta name="_csrf_header" th:content="${_csrf.headerName}">
-        <title>Gerenciar Produtos</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-        <link rel="stylesheet" th:href="@{/css/style.css}">
-    </head>
-    <body>
-        <!-- Sidebar incluído como fragmento -->
-        <aside>
-            <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-        </aside>
+<head>
+    <title>Produtos</title>
+</head>
+<body>
 
-        <div class="container mt-5">
-            <h1 class="mb-4">Gestão de Produtos</h1>
+<div th:fragment="content">
 
-            <!-- Botão para abrir o formulário -->
-            <button class="btn btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#formularioProduto">
-                Novo Produto
-            </button>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-boxes me-2 text-primary"></i>Produtos
+        </h2>
+        <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#formularioProduto"
+                sec:authorize="hasRole('GERENTE')">
+            <i class="bi bi-plus-lg me-1"></i> Novo Produto
+        </button>
+    </div>
 
-            <!-- Formulário de Cadastro -->
-            <div class="collapse" id="formularioProduto">
-                <div class="card card-body">
-                    <form th:action="@{/api/produtos}" method="post" id="produtoForm">
-                        <div class="mb-3">
-                            <label for="nome" class="form-label">Nome do Produto</label>
-                            <input type="text" id="nome" name="nome" class="form-control" placeholder="Nome do Produto" required>
+    <div class="collapse mb-3" id="formularioProduto" sec:authorize="hasRole('GERENTE')">
+        <div class="card card-body">
+            <form id="produtoForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="nome" class="form-label">Nome do produto</label>
+                        <input type="text" id="nome" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select id="tipo" class="form-select" required>
+                            <option value="Pizza">Pizza</option>
+                            <option value="Esfiha">Esfiha</option>
+                            <option value="Bebida">Bebida</option>
+                            <option value="Lanche">Lanche</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="preco" class="form-label">Preço (R$)</label>
+                        <input type="number" id="preco" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check me-3">
+                            <input type="checkbox" id="ativo" class="form-check-input" checked>
+                            <label for="ativo" class="form-check-label">Ativo</label>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="tipo" class="form-label">Tipo do Produto</label>
-                            <select id="tipo" name="tipo" class="form-select" required>
-                                <option value="" disabled selected>Selecione o Tipo</option>
-                                <option value="Pizza">Pizza</option>
-                                <option value="Lanche">Lanche</option>
-                                <option value="Bebida">Bebida</option>
-                                <option value="Porção">Porção</option>
-                                <option value="Adicional">Adicional</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="preco" class="form-label">Preço</label>
-                            <input type="number" id="preco" name="preco" class="form-control" placeholder="Preço (R$)" step="0.01" required>
-                        </div>
-
-                        <div class="form-check mb-3">
-                            <input type="checkbox" id="ativo" name="ativo" class="form-check-input">
-                            <label for="ativo" class="form-check-label">Produto Ativo</label>
-                        </div>
-
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-success">Salvar</button>
-                        </div>
-                    </form>
+                        <button type="submit" class="btn btn-success">Salvar</button>
+                    </div>
                 </div>
-            </div>
+            </form>
+        </div>
+    </div>
 
-            <!-- Listagem de Produtos -->
-            <table class="table table-bordered table-striped mt-3">
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
+                        <th class="ps-4">Nome</th>
                         <th>Tipo</th>
                         <th>Preço</th>
                         <th>Ativo</th>
-                        <th>Ações</th>
+                        <th class="text-end pe-4" sec:authorize="hasRole('GERENTE')">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Loop para listar os produtos -->
+                    <tr th:if="${#lists.isEmpty(produtos)}">
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Nenhum produto cadastrado.
+                        </td>
+                    </tr>
                     <tr th:each="produto : ${produtos}">
-                        <td th:text="${produto.id}"></td>
-                        <td th:text="${produto.nome}"></td>
+                        <td class="ps-4" th:text="${produto.nome}"></td>
                         <td th:text="${produto.tipo}"></td>
-                        <td th:text="${#numbers.formatDecimal(produto.preco, 1, 'COMMA', 2, 'POINT')}"></td>
-                        <td th:text="${produto.ativo == null or produto.ativo ? 'Sim' : 'Não'}">Sim</td>
-                        <td>
-                            <a th:href="@{/api/produtos/{id}(id=${produto.id})}" class="btn btn-warning btn-sm">Editar</a>
-                            <button type="button" class="btn btn-danger btn-sm btn-excluir"
-                                    th:attr="data-id=${produto.id}">Excluir</button>
+                        <td th:text="${produto.preco != null ? 'R$ ' + #numbers.formatDecimal(produto.preco, 1, 'POINT', 2, 'COMMA') : '—'}"></td>
+                        <td th:text="${produto.ativo == null or produto.ativo ? 'Sim' : 'Não'}"></td>
+                        <td class="text-end pe-4" sec:authorize="hasRole('GERENTE')">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-excluir"
+                                    th:attr="data-id=${produto.id}">
+                                <i class="bi bi-trash-fill"></i> Excluir
+                            </button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <script>
-            function cabecalhos() {
-                const h = { 'Content-Type': 'application/json' };
-                h[document.querySelector('meta[name="_csrf_header"]').content] =
-                        document.querySelector('meta[name="_csrf"]').content;
-                return h;
-            }
+    </div>
 
-            document.getElementById('produtoForm').addEventListener('submit', async (e) => {
+    <script>
+        const formProduto = document.getElementById('produtoForm');
+        if (formProduto) {
+            formProduto.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const resposta = await fetch('/api/produtos', {
-                    method: 'POST',
-                    headers: cabecalhos(),
-                    body: JSON.stringify({
-                        nome: document.getElementById('nome').value,
-                        tipo: document.getElementById('tipo').value,
-                        preco: parseFloat(document.getElementById('preco').value),
-                        ativo: document.getElementById('ativo').checked
-                    })
+                const resultado = await chamarApi('/api/produtos', 'POST', {
+                    nome: document.getElementById('nome').value,
+                    tipo: document.getElementById('tipo').value,
+                    preco: parseFloat(document.getElementById('preco').value),
+                    ativo: document.getElementById('ativo').checked
                 });
-                if (resposta.ok) {
+                if (resultado.ok) {
                     location.reload();
                 } else {
-                    alert(resposta.status === 403 ? 'Apenas o gerente pode cadastrar produtos.' : 'Não foi possível salvar o produto.');
+                    alert((resultado.dados && resultado.dados.mensagem) || 'Não foi possível salvar o produto.');
                 }
             });
+        }
 
-            document.querySelectorAll('.btn-excluir').forEach(botao => {
-                botao.addEventListener('click', async () => {
-                    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
-                    const h = cabecalhos();
-                    const resposta = await fetch('/api/produtos/' + encodeURIComponent(botao.dataset.id), { method: 'DELETE', headers: h });
-                    if (resposta.ok) {
-                        location.reload();
-                    } else {
-                        alert(resposta.status === 403 ? 'Apenas o gerente pode excluir produtos.' : 'Não foi possível excluir o produto.');
-                    }
-                });
+        document.querySelectorAll('.btn-excluir').forEach(botao => {
+            botao.addEventListener('click', async () => {
+                if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+                const resultado = await chamarApi('/api/produtos/' + encodeURIComponent(botao.dataset.id), 'DELETE');
+                if (resultado.ok) {
+                    location.reload();
+                } else {
+                    alert((resultado.dados && resultado.dados.mensagem) || 'Não foi possível excluir o produto.');
+                }
             });
-        </script>
-        <script th:src="@{/js/script.js}"></script>
-    </body>
+        });
+    </script>
+
+</div>
+
+</body>
 </html>
