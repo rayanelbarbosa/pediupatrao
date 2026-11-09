@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice(annotations = org.springframework.web.bind.annotation.RestController.class)
@@ -16,6 +17,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(RegraNegocioException.class)
     public ResponseEntity<Map<String, String>> regraNegocio(RegraNegocioException e) {
         return resposta(HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage());
+    }
+
+    @ExceptionHandler(ParametroInvalidoException.class)
+    public ResponseEntity<Map<String, String>> parametroInvalido(ParametroInvalidoException e) {
+        return resposta(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> tipoInvalido(MethodArgumentTypeMismatchException e) {
+        return resposta(HttpStatus.BAD_REQUEST, "Valor inválido para o parâmetro '" + e.getName() + "'.");
     }
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
