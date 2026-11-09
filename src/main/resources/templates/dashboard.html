@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+
+<div th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-graph-up me-2 text-primary"></i>Dashboard
+        </h2>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-muted" id="atualizadoEm"></span>
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="autoAtualizar" checked>
+                <label class="form-check-label small" for="autoAtualizar">Atualizar a cada 60 s</label>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="btnAtualizar">
+                <i class="bi bi-arrow-clockwise"></i> Atualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <form class="card card-body shadow-sm mb-3" id="filtros">
+        <div class="row g-2 align-items-end">
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1" for="fInicio">De</label>
+                <input type="date" id="fInicio" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1" for="fFim">Até</label>
+                <input type="date" id="fFim" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1" for="fStatus">Status</label>
+                <select id="fStatus" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="RECEBIDO">Recebido</option>
+                    <option value="EM_PREPARACAO">Em preparação</option>
+                    <option value="PRONTO">Pronto</option>
+                    <option value="SAIU_PARA_ENTREGA">Saiu para entrega</option>
+                    <option value="RETIRADO">Retirado</option>
+                    <option value="FINALIZADO">Finalizado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1" for="fTipo">Tipo de produto</label>
+                <select id="fTipo" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1" for="fAgrupamento">Agrupar vendas por</label>
+                <select id="fAgrupamento" class="form-select form-select-sm">
+                    <option value="dia">Dia</option>
+                    <option value="mes">Mês</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill">Aplicar</button>
+            </div>
+        </div>
+        <div class="mt-2 small">
+            Atalhos:
+            <a href="#" class="atalho" data-dias="0">hoje</a> ·
+            <a href="#" class="atalho" data-dias="6">7 dias</a> ·
+            <a href="#" class="atalho" data-dias="29">30 dias</a> ·
+            <a href="#" class="atalho" data-dias="mes">este mês</a>
+        </div>
+    </form>
+
+    <div class="alert alert-danger d-none" id="erroDashboard" role="alert"></div>
+
+    <div id="conteudoDashboard">
+        <!-- Indicadores -->
+        <div class="row g-3 mb-3" id="cartoes">
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Receita</div><div class="fs-4 fw-bold" id="kReceita">—</div></div></div></div>
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Pedidos (válidos)</div><div class="fs-4 fw-bold" id="kPedidos">—</div>
+                <div class="small text-muted" id="kTotalPedidos"></div></div></div></div>
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Ticket médio</div><div class="fs-4 fw-bold" id="kTicket">—</div></div></div></div>
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Cancelamentos</div><div class="fs-4 fw-bold" id="kCancelados">—</div>
+                <div class="small text-muted" id="kTaxa"></div></div></div></div>
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Descontos concedidos</div><div class="fs-5 fw-bold" id="kDescontos">—</div></div></div></div>
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Itens vendidos</div><div class="fs-5 fw-bold" id="kItens">—</div></div></div></div>
+            <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-muted small">Clientes atendidos</div><div class="fs-5 fw-bold" id="kClientes">—</div></div></div></div>
+        </div>
+
+        <!-- Graficos -->
+        <div class="row g-3 mb-3">
+            <div class="col-lg-8">
+                <div class="card shadow-sm h-100"><div class="card-body">
+                    <h6 class="fw-bold">Receita por período</h6>
+                    <div style="height: 280px"><canvas id="gVendas"></canvas></div>
+                </div></div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100"><div class="card-body">
+                    <h6 class="fw-bold">Situação dos pedidos</h6>
+                    <div style="height: 280px"><canvas id="gStatus"></canvas></div>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100"><div class="card-body">
+                    <h6 class="fw-bold">Produtos mais vendidos</h6>
+                    <div style="height: 260px"><canvas id="gProdutos"></canvas></div>
+                    <div class="text-muted small d-none" id="semProdutos">Nenhum produto vendido no período.</div>
+                </div></div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card shadow-sm h-100"><div class="card-body">
+                    <h6 class="fw-bold">Receita por categoria</h6>
+                    <div style="height: 260px"><canvas id="gCategorias"></canvas></div>
+                </div></div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card shadow-sm h-100"><div class="card-body">
+                    <h6 class="fw-bold">Pedidos por horário</h6>
+                    <div style="height: 260px"><canvas id="gHoras"></canvas></div>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr><th class="ps-3">#</th><th>Produto</th><th>Tipo</th><th class="text-end">Qtd.</th><th class="text-end pe-3">Receita</th></tr>
+                    </thead>
+                    <tbody id="tabelaProdutos"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        const moeda = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const numero = v => Number(v || 0).toLocaleString('pt-BR');
+        const graficos = {};
+        let temporizador = null;
+
+        function iso(data) {
+            const m = String(data.getMonth() + 1).padStart(2, '0');
+            const d = String(data.getDate()).padStart(2, '0');
+            return data.getFullYear() + '-' + m + '-' + d;
+        }
+
+        function definirPeriodo(dias) {
+            const fim = new Date();
+            const inicio = new Date();
+            if (dias === 'mes') {
+                inicio.setDate(1);
+            } else {
+                inicio.setDate(inicio.getDate() - Number(dias));
+            }
+            document.getElementById('fInicio').value = iso(inicio);
+            document.getElementById('fFim').value = iso(fim);
+        }
+
+        function parametros(incluir) {
+            const p = new URLSearchParams();
+            const valores = {
+                inicio: document.getElementById('fInicio').value,
+                fim: document.getElementById('fFim').value,
+                status: document.getElementById('fStatus').value,
+                tipo: document.getElementById('fTipo').value,
+                agrupamento: document.getElementById('fAgrupamento').value
+            };
+            incluir.forEach(k => { if (valores[k]) p.set(k, valores[k]); });
+            const texto = p.toString();
+            return texto ? '?' + texto : '';
+        }
+
+        async function buscar(caminho, campos) {
+            const resposta = await fetch('/api/dashboard/' + caminho + parametros(campos), { headers: { 'Accept': 'application/json' } });
+            if (resposta.status === 401) { window.location.href = '/login'; throw new Error('Sessão expirada.'); }
+            let corpo = null;
+            try { corpo = await resposta.json(); } catch (e) { /* sem corpo */ }
+            if (!resposta.ok) {
+                throw new Error((corpo && corpo.mensagem) || 'Falha ao consultar ' + caminho + ' (HTTP ' + resposta.status + ').');
+            }
+            return corpo;
+        }
+
+        function desenhar(id, config) {
+            if (graficos[id]) { graficos[id].destroy(); }
+            graficos[id] = new Chart(document.getElementById(id), config);
+        }
+
+        const opcoes = { responsive: true, maintainAspectRatio: false };
+
+        async function carregar() {
+            const erro = document.getElementById('erroDashboard');
+            const conteudo = document.getElementById('conteudoDashboard');
+            erro.classList.add('d-none');
+            conteudo.style.opacity = '0.5';
+            try {
+                const [resumo, vendas, status, produtos, categorias, horas] = await Promise.all([
+                    buscar('resumo', ['inicio', 'fim', 'status']),
+                    buscar('vendas-por-periodo', ['inicio', 'fim', 'status', 'agrupamento']),
+                    buscar('pedidos-por-status', ['inicio', 'fim']),
+                    buscar('produtos-mais-vendidos', ['inicio', 'fim', 'status', 'tipo']),
+                    buscar('vendas-por-categoria', ['inicio', 'fim', 'status', 'tipo']),
+                    buscar('vendas-por-hora', ['inicio', 'fim', 'status'])
+                ]);
+
+                document.getElementById('kReceita').textContent = moeda(resumo.receitaTotal);
+                document.getElementById('kPedidos').textContent = numero(resumo.pedidosValidos);
+                document.getElementById('kTotalPedidos').textContent = 'de ' + numero(resumo.totalPedidos) + ' registrados';
+                document.getElementById('kTicket').textContent = moeda(resumo.ticketMedio);
+                document.getElementById('kCancelados').textContent = numero(resumo.pedidosCancelados);
+                document.getElementById('kTaxa').textContent = Number(resumo.taxaCancelamento).toLocaleString('pt-BR') + '% dos pedidos';
+                document.getElementById('kDescontos').textContent = moeda(resumo.descontosConcedidos);
+                document.getElementById('kItens').textContent = numero(resumo.itensVendidos);
+                document.getElementById('kClientes').textContent = numero(resumo.clientesAtendidos);
+
+                desenhar('gVendas', {
+                    type: 'line',
+                    data: {
+                        labels: vendas.map(p => p.rotulo),
+                        datasets: [{ label: 'Receita (R$)', data: vendas.map(p => p.receita), borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13,110,253,.15)', fill: true, tension: .3 }]
+                    },
+                    options: { ...opcoes, plugins: { tooltip: { callbacks: {
+                        label: c => moeda(c.parsed.y) + ' (' + vendas[c.dataIndex].pedidos + ' pedidos)' } } } }
+                });
+
+                const cores = { RECEBIDO: '#6c757d', EM_PREPARACAO: '#ffc107', PRONTO: '#0dcaf0', SAIU_PARA_ENTREGA: '#0d6efd',
+                    RETIRADO: '#6610f2', FINALIZADO: '#198754', CANCELADO: '#dc3545' };
+                const comPedidos = status.filter(s => s.quantidade > 0);
+                desenhar('gStatus', {
+                    type: 'doughnut',
+                    data: {
+                        labels: comPedidos.map(s => s.descricao),
+                        datasets: [{ data: comPedidos.map(s => s.quantidade), backgroundColor: comPedidos.map(s => cores[s.status] || '#adb5bd') }]
+                    },
+                    options: { ...opcoes, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: {
+                        label: c => c.label + ': ' + c.parsed + ' (' + comPedidos[c.dataIndex].percentual + '%)' } } } }
+                });
+
+                desenhar('gProdutos', {
+                    type: 'bar',
+                    data: {
+                        labels: produtos.map(p => p.nome),
+                        datasets: [{ label: 'Quantidade vendida', data: produtos.map(p => p.quantidade), backgroundColor: '#fd7e14' }]
+                    },
+                    options: { ...opcoes, indexAxis: 'y', plugins: { legend: { display: false } } }
+                });
+                document.getElementById('semProdutos').classList.toggle('d-none', produtos.length > 0);
+
+                desenhar('gCategorias', {
+                    type: 'pie',
+                    data: {
+                        labels: categorias.map(c => c.tipo),
+                        datasets: [{ data: categorias.map(c => c.receita),
+                            backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#20c997'] }]
+                    },
+                    options: { ...opcoes, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: {
+                        label: c => c.label + ': ' + moeda(c.parsed) } } } }
+                });
+
+                desenhar('gHoras', {
+                    type: 'bar',
+                    data: {
+                        labels: horas.map(h => h.rotulo),
+                        datasets: [{ label: 'Pedidos', data: horas.map(h => h.pedidos), backgroundColor: '#20c997' }]
+                    },
+                    options: { ...opcoes, plugins: { legend: { display: false } } }
+                });
+
+                const corpoTabela = document.getElementById('tabelaProdutos');
+                corpoTabela.innerHTML = '';
+                if (produtos.length === 0) {
+                    const linha = corpoTabela.insertRow();
+                    const celula = linha.insertCell();
+                    celula.colSpan = 5;
+                    celula.className = 'text-center text-muted py-3';
+                    celula.textContent = 'Sem vendas no período selecionado.';
+                }
+                produtos.forEach((p, i) => {
+                    const linha = corpoTabela.insertRow();
+                    linha.insertCell().textContent = i + 1;
+                    linha.insertCell().textContent = p.nome;
+                    linha.insertCell().textContent = p.tipo;
+                    const qtd = linha.insertCell(); qtd.className = 'text-end'; qtd.textContent = numero(p.quantidade);
+                    const rec = linha.insertCell(); rec.className = 'text-end pe-3'; rec.textContent = moeda(p.receita);
+                    linha.cells[0].className = 'ps-3';
+                });
+
+                document.getElementById('atualizadoEm').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+            } catch (e) {
+                erro.textContent = e.message || 'Não foi possível carregar o dashboard.';
+                erro.classList.remove('d-none');
+            } finally {
+                conteudo.style.opacity = '1';
+            }
+        }
+
+        async function carregarTipos() {
+            try {
+                const resposta = await fetch('/api/dashboard/tipos-de-produto');
+                if (!resposta.ok) return;
+                const tipos = await resposta.json();
+                const select = document.getElementById('fTipo');
+                tipos.forEach(t => select.add(new Option(t, t)));
+            } catch (e) {
+                // o filtro de tipo e opcional: sem ele o restante continua funcionando
+            }
+        }
+
+        function agendar() {
+            clearInterval(temporizador);
+            if (document.getElementById('autoAtualizar').checked) {
+                temporizador = setInterval(carregar, 60000);
+            }
+        }
+
+        document.getElementById('filtros').addEventListener('submit', e => { e.preventDefault(); carregar(); });
+        document.getElementById('btnAtualizar').addEventListener('click', carregar);
+        document.getElementById('autoAtualizar').addEventListener('change', agendar);
+        document.querySelectorAll('.atalho').forEach(a => a.addEventListener('click', e => {
+            e.preventDefault();
+            definirPeriodo(a.dataset.dias);
+            carregar();
+        }));
+
+        definirPeriodo(29);
+        carregarTipos();
+        carregar();
+        agendar();
+    </script>
+
+</div>
+
+</body>
+</html>

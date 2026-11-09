@@ -236,6 +236,7 @@ public class PedidoService {
             ItemPedido item = new ItemPedido();
             item.setProdutoId(produto.getId());
             item.setNomeProduto(produto.getNome());
+            item.setTipoProduto(produto.getTipo());
             item.setQuantidade(req.quantidade());
             item.setPrecoUnitario(preco);
             item.setSubtotal(preco.multiply(BigDecimal.valueOf(req.quantidade())));

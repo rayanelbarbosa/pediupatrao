@@ -37,6 +37,16 @@ Na primeira execução são criados três usuários, caso ainda não existam:
 
 Os testes automatizados rodam com `mvn test` e não dependem de banco de dados.
 
+### Dados de demonstração (opcional)
+
+Para ver o dashboard com informações sem precisar cadastrar pedidos manualmente, suba a aplicação com a variável
+`PEDIUPATRAO_DEMODATA=true`. Na inicialização são criados produtos e clientes de exemplo (se ainda não existirem) e 120 pedidos
+distribuídos nos últimos 30 dias. A carga não se repete nas execuções seguintes.
+
+```bash
+PEDIUPATRAO_DEMODATA=true mvn spring-boot:run
+```
+
 ## Requisitos implementados
 
 ### RF01 - Controle de usuários e permissões
@@ -110,6 +120,15 @@ de cliente (com destaque para endereço e telefone) e mudança de perfil de usu�
 - Proteção de dados: senhas e tokens nunca entram na trilha, e os telefones são registrados mascarados (apenas os 4 últimos
   dígitos), embora a alteração seja detectada comparando o valor completo.
 
+## Dashboard administrativo
+
+Painel em `/dashboard` (perfis ADMIN e GERENTE) com indicadores de vendas, gráficos de receita por período, categoria e horário,
+situação dos pedidos, ranking de produtos mais vendidos e filtros por período, status e tipo de produto. Os dados vêm da API
+`/api/dashboard/**`, implementada neste projeto e integrada ao MongoDB.
+
+Documentação completa (requisitos, decisões de projeto, endpoints com exemplos e erros, evidências de testes) em
+[docs/documentacao-dashboard.md](docs/documentacao-dashboard.md) e [docs/evidencias-testes.md](docs/evidencias-testes.md).
+
 ## Principais alterações
 
 - **Novos:** `Perfil`, `StatusPedido`, `TipoOperacao`, `ItemPedido`, `Auditoria`, `AlteracaoCampo`, DTOs de pedido,
@@ -131,6 +150,8 @@ de cliente (com destaque para endereço e telefone) e mudança de perfil de usu�
 - `UsuarioServiceTest`: perfis inválidos, autoelevação, último administrador e senha.
 - `AutorizacaoTest`: respostas 401/403 por perfil nas APIs, CSRF e auditoria somente leitura.
 - `TelasTest`: renderização de todas as telas e botões exibidos por perfil.
+- `DashboardServiceTest`, `FiltroDashboardTest` e `DashboardApiTest`: indicadores, séries, ranking, filtros, validações e
+  respostas da API do dashboard.
 
 ## Estrutura
 
