@@ -44,6 +44,12 @@ public class HomeController {
         return "login";
     }
 
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
+        model.addAttribute("content", "dashboard :: content");
+        return "layout";
+    }
+
     @GetMapping("/")
     public String home(Model model) {
         model.addAttribute("content", "home :: content");

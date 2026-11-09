@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "pedidos")
@@ -22,6 +23,7 @@ public class Pedido {
     // Guardado como texto (nome do StatusPedido) para nao quebrar a leitura de pedidos antigos
     private String status;
 
+    @Indexed
     private LocalDateTime dataEntrada;
     private String responsavelRegistro;
 
