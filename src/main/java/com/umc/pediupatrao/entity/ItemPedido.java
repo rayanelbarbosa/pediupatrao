@@ -6,6 +6,7 @@ public class ItemPedido {
 
     private String produtoId;
     private String nomeProduto;
+    private String tipoProduto;
     private int quantidade;
     private BigDecimal precoUnitario;
     private BigDecimal subtotal;
@@ -15,6 +16,9 @@ public class ItemPedido {
 
     public String getNomeProduto() { return nomeProduto; }
     public void setNomeProduto(String nomeProduto) { this.nomeProduto = nomeProduto; }
+
+    public String getTipoProduto() { return tipoProduto; }
+    public void setTipoProduto(String tipoProduto) { this.tipoProduto = tipoProduto; }
 
     public int getQuantidade() { return quantidade; }
     public void setQuantidade(int quantidade) { this.quantidade = quantidade; }
