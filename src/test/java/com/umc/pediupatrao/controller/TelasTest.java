@@ -17,6 +17,7 @@ import com.umc.pediupatrao.entity.Produto;
 import com.umc.pediupatrao.entity.TipoOperacao;
 import com.umc.pediupatrao.service.AuditoriaService;
 import com.umc.pediupatrao.service.ClienteService;
+import com.umc.pediupatrao.service.DashboardService;
 import com.umc.pediupatrao.service.PedidoService;
 import com.umc.pediupatrao.service.ProdutoService;
 import com.umc.pediupatrao.service.UsuarioDetailsService;
@@ -156,5 +157,16 @@ class TelasTest {
         mvc.perform(get("/produtos").with(user("t").roles("ATENDENTE")))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("Novo Produto"))));
+    }
+
+    @MockBean DashboardService dashboardService;
+
+    @Test
+    void dashboardAbreParaAdminEGerenteMasNaoParaAtendente() throws Exception {
+        mvc.perform(get("/dashboard").with(user("g").roles("GERENTE")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Receita por período")));
+        mvc.perform(get("/dashboard").with(user("a").roles("ADMIN"))).andExpect(status().isOk());
+        mvc.perform(get("/dashboard").with(user("t").roles("ATENDENTE"))).andExpect(status().isForbidden());
     }
 }
