@@ -7,6 +7,8 @@ Atividade Prática Individual M1 de Engenharia de Software, evolução do projet
 
 **Tecnologias:** Java 21, Spring Boot 3.4, Spring Security, Spring Data MongoDB, Thymeleaf, Maven.
 
+**Apresentação em vídeo (até 3 min):** [assistir](https://organizacaomogiana-my.sharepoint.com/:v:/g/personal/11221103247_alunos_umc_br/IQCEY17UKBBBQocUgCs9_rYEAfX5PcfjZ8dxm8QcdCWDC9o?e=X8CVRa)
+
 ## Como executar
 
 Pré-requisitos: JDK 21, Maven e um banco MongoDB (local ou MongoDB Atlas).
@@ -167,7 +169,3 @@ src/main/java/com/umc/pediupatrao
 src/main/resources/templates   telas
 src/test/java                  testes automatizados
 ```
-
-## Apresentação em vídeo
-
-[Assistir à apresentação do dashboard](https://organizacaomogiana-my.sharepoint.com/:v:/g/personal/11221103247_alunos_umc_br/IQCEY17UKBBBQocUgCs9_rYEAfX5PcfjZ8dxm8QcdCWDC9o?e=X8CVRa)
